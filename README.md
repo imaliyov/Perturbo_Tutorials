@@ -1,6 +1,9 @@
 # PERTURBO Workshop Practice Handout  
 
-## Practice 0: Example
+[TOC]
+
+## Practice 0: Syntax Examples
+
 
 
 **Goal:** short description of the Practice goal
@@ -41,8 +44,8 @@ if python is needed_here_at_all:
 
 :page_facing_up: `this is a file`
 
-## Practice 1: Perturbo Download and Installation
-> [name=itelu]
+## Practice 1: Perturbo Download and Installation 
+> [name=itelu] [time=Mon, Aug 31, 2020] 
 
 #### How to install Quantum Espresso?
 ```bash=
@@ -51,32 +54,7 @@ if python is needed_here_at_all:
 ```
 
 #### How to install Wannier90?
-- [x] yes
 
-Can you do a folder symbol as well? what is that? An icon for a folder. Let me try
-
-
-- [time=Mon, Aug 31, 2020 3:18 PM] 
-
-:file_folder: `this is a directory`
-Perfect! You could use that for your folder hierarchy. 
-
-What about a file icon? :D
-This website: https://gist.github.com/rxaviers/7360908
-
-#### Recommended directory hierarchy
-:file_folder: **pw-ph-wan**
-
-----:file_folder: scf
-
-----:file_folder: phonon
-
-----:file_folder: nscf
-
-----:file_folder: wann
-
-:page_facing_up:
-Cool! Yeah!
 
 #### How to install PERTURBO?
 
@@ -84,6 +62,23 @@ Please change into the Quantum Espresso directory and download the PERTURBO code
 ```bash=
 >> git clone https://github.com/perturbo-code/perturbo.git
 ```
+
+#### Recommended directory hierarchy
+ 
+- :open_file_folder: **pw-ph-wan**
+  - :file_folder: scf
+  - :file_folder: nscf
+  - :file_folder: phonon
+  - :file_folder: wann
+- :file_folder: **qe2pert**
+- :open_file_folder: **perturbo**
+  - :file_folder: pert-band
+  - :file_folder: pert-setup
+  - :face_with_monocle: .........
+
+
+
+
 
 
 
@@ -95,5 +90,5 @@ Please change into the Quantum Espresso directory and download the PERTURBO code
 > [name=Jin-Jian]
 
 
-## Practice 4:
+## Practice 4: Ultrafast Dynamics in the BTE framework
 > [name=Ivan]
