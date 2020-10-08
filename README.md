@@ -19,7 +19,7 @@ The current release of PERTURBO supports QE6.5 and 6.4. In the following, we wil
 
 ```bash=
 >> wget https://github.com/QEF/q-e/archive/qe-6.5.tar.gz
->> tar -zxvf qe-6.5.tar.gz
+>> tar xvzf qe-6.5.tar.gz
 >> cd q-e-qe-6.5
 >> ./configure
 >> make pw ph pp
@@ -34,8 +34,9 @@ Once QE is installed, it is easy to install W90 by the following commands:
 
 ```bash=
 >> cd q-e-qe-6.5
->> git https://github.com/wannier-developers/wannier90.git
->> cd wannier90
+>> wget https://github.com/wannier-developers/wannier90/archive/v3.0.0.tar.gz
+>> tar xvzf v3.0.0.tar.gz
+>> cd wannier90-3.0.0
 >> cp ./config/make.inc.xxx ./make.inc
 >> make
 ```
@@ -93,7 +94,7 @@ Before running PERTURBO, we need to obtain the ground state of a system of inter
       - :file_folder: nscf: non-self-consistent calculations using QE
       - :file_folder: phonon: deformation potential computed using QE
       - :file_folder: wann: maximally localized Wannier functions obtained using W90
-    - :file_folder: **qe2pert**: electron-phonon matrix elements in Wannier basis obtained using qe2pert.x
+    - :file_folder: **qe2pert**: electron-phonon matrix elements in Wannier basis
     - :open_file_folder: **perturbo**
       - :file_folder: pert-band: interpolated band structures using perturbo.x
       - :file_folder: pert-trans: transport calculations using perturbo.x 
@@ -117,11 +118,11 @@ In the following, we use silicon without spin-orbit coupling (SOC) to demonstrat
 ### Preparation for PERTURBO: silicon as an example
 
 The following are the main steps to prepare *prefix*_epwan.h5:
-* SCF calculation using *pw.x*
-* Phonon calculation using *ph.x*
-* NSCF calculation using *pw.x*
-* Wannier functions using *wannier90.x*
-* e-ph matrix elements using *qe2pert.x*
+1. SCF calculation using *pw.x*
+2. Phonon calculation using *ph.x*
+3. NSCF calculation using *pw.x*
+4. Wannier functions using *wannier90.x*
+5. e-ph matrix elements using *qe2pert.x*
 
 > :heavy_exclamation_mark: Please refer to [the instructions of how to perform the above steps](https://perturbo-code.github.io/mydoc_qe2pert.html). 
 
@@ -474,11 +475,11 @@ In additiona, to obatin the Seebeck coefficients, we can use the calculation mod
 In this part, we will perform the ultrafast electron dynamics in Si including the electron-phonon interactions.
 
 We assume that the `qe2pert` calculation is already performed and we have the *si_epwan.h5* file. In order to obtain the time-dependent electron population, one needs to go though the following steps:
-- `calc_mode = setup` 
-- `calc_mode = dynamics-run`
-- `calc_mode = dynamics-pp`
+1. `calc_mode = setup` 
+2. `calc_mode = dynamics-run`
+3. `calc_mode = dynamics-pp`
 
-### `setup` calculation
+### Step 1: `setup` calculation
 Obtain the input file using the Python script:
 ```bash=
 >> [perturbo-path]/utils/generate_input.py -c setup --prefix=si -i pert_setup.in
@@ -523,13 +524,13 @@ Run the calculation (in this example we use 5 OpenMP threads and 4 MPI tasks)
 >> export OMP_NUM_THREADS=5
 >> mpirun -np 4 <perturbo-path>/perturbo.x -npools 4 -i pert_setup.in
 ```
-### `dynamics-run` calculation
+### Step 2: `dynamics-run` calculation
 Obtain the input file using the Python script:
 ```bash=
 >> [perturbo-path]/utils/generate_input.py -c dynamics-run --prefix=si -i dynamics_run.in
 ```
 
-or [from the website ](https://perturbo-code.github.io/mydoc_interactive_workflow.html) (click on `dynamics-run` and then copy the input file text), after that open a new file *pert_dynamics.in* and paste the input file text. We select a Gaussian excitation at 7.0 eV with 40.0 meV smearing. The simulation will be performed for 100 steps with 1.0 fs time step. Modify the file in the following way:
+or [from the website ](https://perturbo-code.github.io/mydoc_interactive_workflow.html) (click on `dynamics-run` and then copy the input file text), after that please open a new file *pert_dynamics.in* and paste the input file text. We select a Gaussian excitation at 7.0 eV with 40.0 meV smearing. The simulation will be performed for 100 steps with 1.0 fs time step. Modify the file in the following way:
 ```
 &perturbo
 ! ***Mandatory parameters***
@@ -559,10 +560,10 @@ or [from the website ](https://perturbo-code.github.io/mydoc_interactive_workflo
 
 Run the calculation
 ```bash=
->> mpirun -np 4 <perturbo-path>/perturbo.x -npools 4 -i pert_dynamics.in
+>> mpirun -np 4 [perturbo-path]/bin/perturbo.x -npools 4 -i pert_dynamics.in
 ```
 
-In order to test the restart option, modify the following parameters in the pert_dynamics.in input
+In order to test the restart option, modify the following parameters in the input file *pert_dynamics.<span></span>in*:
 
 ```
  boltz_nstep         = 20
@@ -576,7 +577,7 @@ Run the calculation
 
 You could open and analyze the *si_cdyna.h5* file with HDFview or h5ls. The structure of the file is explained [here](https://perturbo-code.github.io/mydoc_perturbo.html#cdyna_h5_file).
 
-### `dynamics-pp` calculation
+### Step 3: `dynamics-pp` calculation
 In order to create the input file for the postprocessing mode, take the input file from the previous calculation (`dynamics-run`) and change `dynamics-run` to `dynamics-pp`.
 
 Run the calculation
@@ -584,9 +585,9 @@ Run the calculation
 >> mpirun -np 4 <perturbo-path>/perturbo.x -npools 4 -i pert_dynamics.in
 ```
 
-This calculation generates the *si_popu.h5* and *si_cdyna.dat* output files. *si_popu.h5* contains the time-dependent electron population (click [here](https://perturbo-code.github.io/mydoc_perturbo.html#popu_h5_file) to see the sctucture of the file) and *si_cdyna.dat* contains the number of carriers per unit cell as a function of time.
+This calculation generates the *si_popu.h5* and *si_cdyna.dat* output files. *si_popu.h5* contains the time-dependent electron population (click [here](https://perturbo-code.github.io/mydoc_perturbo.html#popu_h5_file) to see the structure of the file) and *si_cdyna.dat* contains the number of carriers per unit cell as a function of time.
 
-Python script to plot one electron population snapshot:
+The following is a python script to plot one electron population snapshot:
 ```python=
 ###!/usr/bin/env python3
 """
@@ -621,7 +622,7 @@ plt.savefig('snap.pdf')
 #plt.show()
 ```
 
-Python script to plot the heatmap of carrier population as a function of energy for several times:
+The following is a python script to plot the heatmap of carrier population as a function of energy for several times:
 ```python=
 #!/usr/bin/env python3
 """
@@ -733,3 +734,11 @@ fig.savefig('population.pdf')
 
 #plt.show()
 ```
+
+## Conclusion
+
+Here we have covered the basic workflow of how to run carrier transport and dynamics. In the future, we will include more features into PERTURBO, stay tuned! If any questions that we can answer, please send us emails (perturbo@caltech.edu). 
+
+Thank you very much!
+
+PERTURBO team at Marco Bernardi Reserach Group, 2020/10/08
