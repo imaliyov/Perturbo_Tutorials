@@ -2,93 +2,484 @@
 
 [TOC]
 
-## Practice 0: Syntax Examples
+## Introduction
+
+This handout covers the four practice sessions in the PERTURBO workshop on **Oct. 15, 2020**. The first session is about how to install PERTURBO; the second is about how to prepare data for PERTURBO from Quantum Espresso (QE) and Wannier90 (W90); the third is to demonstrate how to run temperature-dependent transport using PERTURBO; the last is to run carrier dynamics using PERTURBO. 
 
 
-
-**Goal:** short description of the Practice goal
-### Subsections (if needed)
-
-Equation example:
-$$E=Q_{ati}^{on}$$
-
-In-line equation example: $E=Q_{ati}^{on}$
-
-Link example: [perturbo](https://perturbo-code.github.io)
-
-> Quote example 
-
-List example:
-- First item
-- Second item
-- Third item
-    - Indented item
-    - Indented item
-- Fourth item
-
-Some `inline code` here. 
-
-```bash=
-#some bash code here
-cd ~
-cp file.dat file2.dat
-```
-
-```python=
-#some Python code here
-if python is needed_here_at_all:
-    print('Hello')
-```
-
-:file_folder: `this is a directory`
-
-:page_facing_up: `this is a file`
 
 ## Practice 1: Perturbo Download and Installation 
-> [name=itelu] [time=Mon, Aug 31, 2020] 
 
-#### How to install Quantum Espresso?
+PERTURBO uses a few subroutines from QE and reads a few output files from W90. Therefore, please make sure your QE and W90 compiled sucessfully on your local cluster or laptop. In addition, PERTURBO uses the HDF5 format to store data, so please make sure you have the HDF5 library installed.
+> :warning: **PERTURBO requires the HDF5 library.**
+
+
+### How to install Quantum Espresso?
+The current release of PERTURBO supports QE6.5 and 6.4. In the following, we will use QE6.5. A quick way to install QE is as follows:
+
 ```bash=
->> wget <quantum espresso package>
+>> wget https://github.com/QEF/q-e/archive/qe-6.5.tar.gz
+>> tar -zxvf qe-6.5.tar.gz
+>> cd q-e-qe-6.5
+>> ./configure
 >> make pw ph pp
 ```
 
-#### How to install Wannier90?
+More details on how to install QE please refer to the [QE website](https://www.quantum-espresso.org/). 
 
+> :warning: **PERTURBO supports QE6.4 and 6.5.**
 
-#### How to install PERTURBO?
+### How to install Wannier90?
+Once QE is installed, it is easy to install W90 by the following commands:
 
-Please change into the Quantum Espresso directory and download the PERTURBO codes
 ```bash=
->> git clone https://github.com/perturbo-code/perturbo.git
+>> cd q-e-qe-6.5
+>> git https://github.com/wannier-developers/wannier90.git
+>> cd wannier90
+>> cp ./config/make.inc.xxx ./make.inc
+>> make
 ```
 
-#### Recommended directory hierarchy
- 
-- :open_file_folder: **pw-ph-wan**
-  - :file_folder: scf
-  - :file_folder: nscf
-  - :file_folder: phonon
-  - :file_folder: wann
-- :file_folder: **qe2pert**
-- :open_file_folder: **perturbo**
-  - :file_folder: pert-band
-  - :file_folder: pert-setup
-  - :face_with_monocle: .........
+More details on how to install W90 please refer to the [W90 website](www.wannier.org
+). 
+
+### How to install PERTURBO?
+
+To get the source codes of PERTURBO, please click "Download" and fill the questionnaire [here](https://perturbo-code.github.io/). Once QE is installed, it is easy to install PERTURBO by the following commands:
+
+```bash=
+>> cd q-e-qe-6.5
+>> git clone https://github.com/perturbo-code/perturbo.git
+>> cd perturbo
+>> vi make.sys
+```
+
+Modify the two flags *FFLAGS* and *LDFLAGS* for your compilers, for example, 
+```
+<for intel compiler>
+......
+FFLAGS + = -qopenmp -cpp
+LDFLAGS += -qopenmp
+......
+```
+or
+```
+<for gfortran compiler>
+......
+FFLAGS + = -fopenmp -x f95-cpp-input
+LDFLAGS += -fopenmp
+......
+```
+
+Modify the two flags *IFLAGS* and *HDF5LIB* for your HDF5 library, 
+```
+......
+IFLAGS + = -I<path-to-your-hdf5-include>
+HDF5_LIB += -L<path-to-your-hdf5-lib> -lhdf5 -lhdf5_fortran
+......
+```
+
+After modifying the above flags in the make.sys file, simply type `make` to install PERTURBO. Two executables (*qe2pert.x* and *perturbo.x*) will show up in the **perturbo/bin** directory
 
 
+### Recommended directory hierarchy
+
+Before running PERTURBO, we need to obtain the ground state of a system of interest, the associated Wannier functions, and the phonon deformation potentials. Therefore, there will be many input files and output data for QE and W90. Here we recommend a directory hierarchy for users to organize those input files and output data. There are three main directories, **pw-ph-wan**, **qe2pert** and **perturbo**. For example, if we are interested in silicon, we create the following directory hierarchy:
 
 
+- :open_file_folder: silicon
+    - :open_file_folder: **pw-ph-wan**
+      - :file_folder: scf: self-consistent calculations using QE
+      - :file_folder: nscf: non-self-consistent calculations using QE
+      - :file_folder: phonon: deformation potential computed using QE
+      - :file_folder: wann: maximally localized Wannier functions obtained using W90
+    - :file_folder: **qe2pert**: electron-phonon matrix elements in Wannier basis obtained using qe2pert.x
+    - :open_file_folder: **perturbo**
+      - :file_folder: pert-band: interpolated band structures using perturbo.x
+      - :file_folder: pert-trans: transport calculations using perturbo.x 
+      - :file_folder: pert-<calculation-mode>
+      - more other calculation modes please see [here](https://perturbo-code.github.io/mydoc_perturbo.html).
 
+
+### Utilities provided on the PERTURBO website
+
+* to get the example input files for PERTURBO => [interactive workflow](https://perturbo-code.github.io/mydoc_interactive_workflow.html)
+* to go through tutorials and examples => [tutorials](https://perturbo-code.github.io/mydoc_org.html) and [examples](https://perturbo-code.github.io/mydoc_tutorial_intro.html)
+* to find the definition of each input variable => [tables for variables](https://perturbo-code.github.io/mydoc_param_qe2pert.html)
 
 
 ## Practice 2: Preliminary Steps
-> [name=Jinsoo]
+
+Now we have perturbo compiled and installed successfully. To run PERTURBO calculations, we have to prepare the electron-phonon (e-ph) matrix elements in Wannier basis and then store the related data in a HDF5 file, called *prefix*_.h5, generated by *qe2pert.x*. 
+
+In the following, we use silicon without spin-orbit coupling (SOC) to demonstrate how to use *qe2pert.x* and how to compute the e-ph matrix elements along a high symmetry $\mathbf{k}$-path. After the example, we will point out a few points of how to use PERTURBO (without going into many detials) for materials with SOC and polar materials.  
+
+### Preparation for PERTURBO: silicon as an example
+
+The following are the main steps to prepare *prefix*_epwan.h5:
+* SCF calculation using *pw.x*
+* Phonon calculation using *ph.x*
+* NSCF calculation using *pw.x*
+* Wannier functions using *wannier90.x*
+* e-ph matrix elements using *qe2pert.x*
+
+> :heavy_exclamation_mark: Please refer to [the instructions of how to perform the above steps](https://perturbo-code.github.io/mydoc_qe2pert.html). 
+
+Here we mention only a point that users need to pay attention to. In the phonon input file, *ph-ref.<span></span>in*, which we have prepared for the phonon calculation in [the tutorial](https://perturbo-code.github.io/mydoc_qe2pert.html), for example, 
+```
+&inputph
+  verbosity='debug'
+  tr2_ph=1.0d-17
+  prefix='si'
+  ldisp=.true.
+  epsil=.true.
+  lqdir=.true.
+  outdir='./tmp'
+  fildyn='si.dyn.xml'
+  fildvscf='dvscf'
+  nq1=8, nq2=8, nq3=8,
+  start_q=1, last_q=1
+/
+```
+where the variable *fildyn* must have an extension of .xml and the $\mathbf{q}$-grid (nq1, nq2, and nq3) must be commensurate with the $\mathbf{k}$-grid used in the NSCF calculation. For example, a $\mathbf{q}$-grid of 8x8x8 is commensurate with a $\mathbf{k}$-grid of 8x8x8 or 16x16x16, but not with a $\mathbf{k}$-grid of 10x10x10. 
+
+
+
+### PERTURBO for computing e-ph matrix elements: silicon as an example
+
+We will use the HDF5 file *si_epwan.h5* (downlaod it [here](https://caltech.app.box.com/folder/101105521133?s=y8hu34pjchxet1r25abnsnz1azo3pe4y)).
+
+
+In the PERTURBO calculation mode 'ephmat', the e-ph matrix elements $|g_{\mu}(\mathbf{k},\mathbf{q})|$ at crystal momentum at $\mathbf{k}$ and $\mathbf{q}$ for a phonon mode $\mu$ are computed using the following formula:
+
+$|g_{\mu}(\mathbf{k},\mathbf{q})|=\sqrt{\sum_{mn}|g_{\mu}(\mathbf{k},\mathbf{q})|^2/N_{b}}$
+
+where $m$ and $n$ are the band indices of interest and $N_{b}$ is the number of bands taken into consideration.
+
+Here is the example of the perturbo input file for the calculation mode 'ephmat', *pert.<span></span>in* (the example files can be downloaded [here](https://caltech.app.box.com/folder/101106042780)):
+```
+&perturbo
+ prefix = 'si'
+ calc_mode = 'ephmat'
+ fklist = 'eph.kpt'
+ fqlist = 'eph.qpt'
+ 
+ band_min = 2
+ band_max = 4
+ 
+ phfreq_cutoff = 1 ! meV
+```
+where *fklist* is the file containing the list of $\mathbf{k}$-points, *fqlist* is the file containing the list of $\mathbf{q}$-points, and *phfreq_cutoff* is the energy below which the phonon modes will not be not computed. 
+
+To run the calculation, we type 
+```bash=
+>> mpirun -n 1 [perturbo-path]/bin/perturbo.x -npools 1 -i pert.in > pert.out
+```
+It gives a file called *si.ephmat*, which contains the $\mathbf{k}$- and $\mathbf{q}$-point coordinate for plotting, phonon energy, deformation energy, and the e-ph matrix elements. 
+
+
+
+
+### Spin-orbit coupling: silicon as an example
+
+PERTURBO supports both collinear and noncollinear calculations as well as SOC and fully-relativistic pseudopotentials. 
+
+Here we use silicon with SOC as an example (please refer to [the example on the PERTURBO website](https://perturbo-code.github.io/mydoc_tutorial_si.html)). In the following, we just point out the difference of the input files for *qe2pert.x* and *perturbo.x* between the two cases: silicon with and without SOC. 
+
+If one uses 16 bands in the NSCF and Wannierization calculations for silicon without SOC, then one should doubles the number of bands for silicon with SOC. For example, for silicon with SOC, the input file for *qe2pert.x*: 
+```
+! silicon with SOC
+&qe2pert
+ prefix='si'
+ outdir='./tmp'
+ phdir='../pw-ph-wann/phonon/References/save'
+ nk1=8, nk2=8, nk3=8
+ dft_band_min = 1
+ dft_band_max = 32
+ num_wann = 16
+ lwannier=.true.
+/
+```
+compared to the case of silicon without SOC:
+```
+! silicon without SOC
+&qe2pert
+ prefix='si'
+ outdir='./tmp'
+ phdir='../pw-ph-wann/phonon/References/save'
+ nk1=8, nk2=8, nk3=8
+ dft_band_min = 1
+ dft_band_max = 16
+ num_wann = 8
+ lwannier=.true.
+/
+```
+Note the difference of *dft_band_min*, *dft_band_max*, and *num_wann* between the two input files. 
+
+For the input files for *perturbo.x*, we need to modify the band-related variables . For example, for silicon with SOC, the input file:
+```
+! silicon with SOC
+&perturbo
+ ...
+ band_min = 3
+ band_max = 8
+ ...
+/
+```
+compared to 
+```
+! silicon with SOC
+&perturbo
+ ...
+ band_min = 2
+ band_max = 4
+ ...
+/
+```
+
+### Polar materials: GaAs as an example 
+
+PERTURBO also supports polar materilas. The example of GaAs can be found on the website ([here](https://perturbo-code.github.io/mydoc_tutorial_gaas.html)). One additional point we would like to point out is that in the phonon calculation, the variable *epsil* needs to be set to .true. for polar materials. 
+
+
+
 
 
 ## Practice 3: Charge Transport Calculation
-> [name=Jin-Jian]
+
+Here we look at the temperature-dependent mobility of GaAs. We start from the qe2pert-generated *gaas_epwan.h5* file, which can be downloaded [here](https://caltech.app.box.com/folder/101215212117?s=ux4jqprf8k0u632702qvhse8azkghcar).
+
+
+### Python script for generating input files
+
+To get input files for PERTURBO, we provide a python script *generate\_input.py* in the **perturbo/utils** directory. 
+
+To see what options the python script provides, one can type
+```bash=
+>> [perturbo-path]/utils/generate_input.py --help
+```
+
+To generate an input file for a calculation mode, one can use
+```bash=
+>> [perturbo-path]/utils/generate_input.py --calc_mode <calc_mode>
+or 
+>> [perturbo-path]/utils/generate_input.py -c <calc_mode>
+```
+where <calc\_mode> is the calculation mode provided in PERTURBO (see the calculation mode options [here](https://perturbo-code.github.io/mydoc_perturbo.html)). The python script generates a file *pert.<span></span>in* for PERTURBO calculations.
+
+
+
+
+For example, to get the input file for the calculation mode 'bands' for *perturbo.x*, one can type
+
+```bash=
+>> [perturbo-path]/utils/generate_input.py -c bands --prefix=gaas -i pert-bands.in
+```
+where the option *--prefix=gaas* modifies the variable *prefix* in the input file. The generated input file is shown below:
+```
+! This input file for PERTURBO was generated by generate_input.py script
+
+&perturbo
+! ***Mandatory parameters***
+ calc_mode           = 'bands'
+ prefix              = 'gaas'
+ fklist              = 'gaas.kpt'
+/
+```
+Here we modified the content of the fklist from 'prefix_tet.kpt' to 'gaas.kpt'.
+
+We need to prepare the 'gaas.kpt' file, which contains the $\mathbf{k}$-path for the electronic band structure of interest. There are two ways to prepare the file: (1) provide all the $\mathbf{k}$-points along the path; (2) provide only the high symmetric $\mathbf{k}$-points. For example, in this GaAs case, we prepare in the file 'gaas.kpt':
+```
+3
+0.5 0.5 0.5  50  !L
+0.0 0.0 0.0  50  !G
+0.5 0.0 0.0   1  !X
+```
+The first number is the number of lines after the first line. The first to third column means the coordinates of the $\mathbf{k}$-points in crystal coordinates. The forth column means the number of $\mathbf{k}$-points from the current one to the next one. 
+
+
+We are ready to run the band structure calculation. We type
+```bash=
+>> [perturbo-path]/bin/perturbo.x -i pert-bands.in
+```
+The band structure is stored in a file called 'gaas.bands', from which we can use gnuplot to plot the band structure. For example, 
+```
+>> gnuplot
+>> plot "gaas.bands" u 1:5 w l lw 2
+```
+
+
+### Transport calculation setup 
+
+To do the transport calculation, we need to perform a setup step, in which we select a set of $\mathbf{k}$-points involved in the transport and the correponding chemical potential for a given carrier concentration.
+
+To get the input file for the setup, we type
+```bash=
+>> [perturbo-path]/utils/generate_input.py -c setup --prefix=gaas -i pert-setup.in
+```
+
+We obtain a input file like the one shown below:
+```
+! This input file for PERTURBO was generated by generate_input.py script
+
+&perturbo
+! ***Mandatory parameters***
+ calc_mode           = 'setup'
+ prefix              = 'gaas'
+ boltz_kdim(1)       = 160
+ boltz_kdim(2)       = 160
+ boltz_kdim(3)       = 160
+ ftemper             = 'gaas.temper'
+
+ band_min = 5
+ band_max = 5
+
+ boltz_emin = 6.0
+ boltz_emax = 6.3
+
+! ***Optional parameters***
+! band_min           = 1
+! band_max           = 9999999
+! boltz_emin         = -9999.0         ! eV
+! boltz_emax         = 9999.0          ! eV
+! hole               = .false.
+/
+```
+Note that we modified the file for our system.
+
+We need to prepare a file 'gaas.temper', which contains the information of temperature (1st column; unit: K), chemical potential (2nd column; unit: eV) and carrier concentration (3rd column; unit: cm$^{-3}$):
+```
+5 T
+150   6.0   1.0E+16
+200   6.0   1.0E+16
+250   6.0   1.0E+16
+300   6.0   1.0E+16
+350   6.0   1.0E+16
+```
+In the first line, the first number means how many conditions to compute; the second number is a logical flag, if it is T, then it computes the corresponding chemical potential for the given carrier concentration (the second column will be overwrite with the computed one), while if it is F, then it will use the chemical potential provided in this file for transport calculations (the third column is then not used).
+
+We are ready to run the setup calculation:
+```bash=
+>> export OMP_NUM_THREADS=4
+>> mpirun -np 4 [perturbo-path]/perturbo.x -npools 4 -i pert-setup.in
+```
+We obtain the $\mathbf{k}$-points that are involved in the transport in the file 'gaas_tet.kpt'. The computed chemical potentials and carrier concentrations are stored in a file called 'gaas.doping'. The file 'gaas.temper' is updated
+
+### Relaxation time approximation for carrier mobility
+
+
+To get the input file for transport calculation, we type
+```bash=
+>> [perturbo-path]/utils/generate_input.py -c trans --prefix=gaas -i pert-trans.in
+```
+We obtain a input file named `pert-trans.in`, and we edit the parameters to be consistent with the setup calculations (one can also modify the input file for the setup calculation):
+
+
+```
+&perturbo
+! ***Mandatory parameters***
+ calc_mode           = 'trans'
+ prefix              = 'gaas'
+ boltz_kdim(1)       = 160
+ boltz_kdim(2)       = 160
+ boltz_kdim(3)       = 160
+ ftemper             = 'gaas.temper'
+
+ band_min = 5
+ band_max = 5
+
+ boltz_emin = 6.0
+ boltz_emax = 6.3
+
+ boltz_nstep = 1 ! RTA, only compute the initial step 
+ tmp_dir = './tmp'
+ debug=.true.
+
+! ***Optional parameters***
+! boltz_qdim(1)      = boltz_kdim(1)
+! boltz_qdim(2)      = boltz_kdim(2)
+! boltz_qdim(3)      = boltz_kdim(3)
+! band_min           = 1
+! band_max           = 9999999
+! boltz_emin         = -9999.0         ! eV
+! boltz_emax         = 9999.0          ! eV
+! delta_smear        = 10.0            ! meV
+! phfreq_cutoff      = 1.0             ! meV
+! boltz_nstep        = 50
+! boltz_de           = 1.0             ! meV
+! trans_thr          = 0.002
+! hole               = .false.
+! load_scatter_eph   = .false.
+! tmp_dir            = './tmp'
+/
+```
+In the debug mode (`debug=.true.`), the code outputs the computed scattering rates. 
+
+Then we type
+```bash=
+>> export OMP_NUM_THREADS=4
+>> mpirun -np 4 <perturbo-path>/perturbo.x -npools 4 -i pert-trans.in
+```
+to compute and store e-ph matrix elements in the HDF5 files in directory `./tmp`, e.g., *gaasephg2p1.h5*. The e-ph matrix elements can be reused in the iterative approach (see below). The carrier mobility is stored in the file 'gaas.cond'.
+
+
+### Iterative approach for carrier mobility
+
+We modify the input file for the previous transport calculation. Note that we can use the e-ph matrix elements obtained in the RTA by providing a flag *load_scatter_eph* in the input file:
+```
+&perturbo
+! ***Mandatory parameters***
+ calc_mode           = 'trans'
+ prefix              = 'gaas'
+ boltz_kdim(1)       = 160
+ boltz_kdim(2)       = 160
+ boltz_kdim(3)       = 160
+ ftemper             = 'gaas.temper'
+
+ band_min = 5
+ band_max = 5
+
+ boltz_emin = 6.0
+ boltz_emax = 6.3
+
+ boltz_nstep = 1 ! RTA, only compute the initial step 
+ tmp_dir = './tmp'
+ debug=.true.
+ 
+ load_scatter_eph  = .true.
+
+
+! ***Optional parameters***
+! boltz_qdim(1)      = boltz_kdim(1)
+! boltz_qdim(2)      = boltz_kdim(2)
+! boltz_qdim(3)      = boltz_kdim(3)
+! band_min           = 1
+! band_max           = 9999999
+! boltz_emin         = -9999.0         ! eV
+! boltz_emax         = 9999.0          ! eV
+! delta_smear        = 10.0            ! meV
+! phfreq_cutoff      = 1.0             ! meV
+! boltz_nstep        = 50
+! boltz_de           = 1.0             ! meV
+! trans_thr          = 0.002
+! hole               = .false.
+! tmp_dir            = './tmp'
+/
+```
+
+In additiona, to obatin the Seebeck coefficients, we can use the calculation mode 'trans-pp' after the mode 'trans', and the results are outputed in file 'gaas.transcoef'.
 
 
 ## Practice 4: Ultrafast Dynamics in the BTE framework
-> [name=Ivan]
+In this part, we will perform the ultrafast electron dynamics in Si including the electron-phonon interactions.
+
+We assume that the `qe2pert` calculation is already performed and we have the *si_epwan.h5* file. In order to obtain the time-dependent electron population, one needs to go though the following steps:
+- `calc_mode = setup` 
+- `calc_mode = dynamics-run`
+- `calc_mode = dynamics-pp`
+
+### `setup` calculation
+Obtain the input file 
+### `dynamics-run` calculation
+
+### `dynamics-pp` calculation
